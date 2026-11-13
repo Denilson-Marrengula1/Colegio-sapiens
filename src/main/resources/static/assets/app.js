@@ -9,7 +9,7 @@ const icons = {dashboard:'⌂',utilizadores:'♙',turmas:'▤',alunos:'♧',prof
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 const initials = name => String(name || '?').trim().split(/\s+/).slice(0,2).map(part => part[0]).join('').toUpperCase();
 const canWrite = () => writers.includes(state.user?.role);
-const canManageUser = user => state.user?.role==='ADMIN' || state.user?.role==='SECRETARIA' && !user.encarregadoId && !user.professorId && !user.alunoId && !privileged.includes(user.role);
+const canManageUser = user => user.role!=='ADMIN' && (state.user?.role==='ADMIN' || state.user?.role==='SECRETARIA' && !user.encarregadoId && !user.professorId && !user.alunoId && !privileged.includes(user.role));
 const pageTitle = {dashboard:'Painel de gestão',utilizadores:'Utilizadores',turmas:'Turmas',alunos:'Alunos',professores:'Professores',encarregados:'Encarregados',integracoes:'Central de Integrações',comunicacao:'Canais de Comunicação',reunioes:'Reuniões',relatorios:'Relatórios',perfil:'Meu perfil'};
 const readable = type => {
   if(type==='utilizadores') return writers.includes(state.user?.role);

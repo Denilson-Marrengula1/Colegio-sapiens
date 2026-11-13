@@ -62,6 +62,8 @@ public class AuthController {
     public AccountView update(@PathVariable Long id,
             @Valid @RequestBody UpdateUserRequest request, Authentication auth) {
         UserAccount account=find(id);
+        if(account.getRole()==Role.ADMIN)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Contas de administrador não podem ser editadas");
         requireAssignableRole(account.getRole(),auth);
         requireAssignableRole(request.role(),auth);
         if(account.temCadastro()) {

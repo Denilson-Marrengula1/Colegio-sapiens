@@ -34,6 +34,31 @@ class FrontendAccessTest {
         mvc.perform(get("/api/auth/utilizadores")).andExpect(status().isUnauthorized());
     }
 
+    @Test @WithMockUser(username="uiadmin",roles="ADMIN") @org.springframework.transaction.annotation.Transactional
+    void adminAccountsCannotBeEditedButOwnPasswordCanBeChanged() throws Exception {
+        UserAccount admin=users.findByUsername("uiadmin").orElseThrow();
+        UserAccount other=new UserAccount();
+        other.setUsername("outro-admin");other.setNome("Outro Administrador");other.setRole(Role.ADMIN);
+        other.setPasswordHash(encoder.encode("OutroAdmin123!"));other.setActivo(true);
+        users.saveAndFlush(other);
+
+        for(UserAccount target:new UserAccount[]{admin,other}) {
+            mvc.perform(put("/api/auth/utilizadores/{id}",target.getId()).contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"username":"%s","nome":"Alterado","password":"Alterado123!","role":"ADMIN"}
+                    """.formatted(target.getUsername())))
+                .andExpect(status().isForbidden());
+            assertNotEquals("Alterado",users.findById(target.getId()).orElseThrow().getNome());
+        }
+        assertTrue(encoder.matches("UiAdmin123!",admin.getPasswordHash()));
+        assertTrue(encoder.matches("OutroAdmin123!",other.getPasswordHash()));
+
+        mvc.perform(put("/api/auth/password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"currentPassword\":\"UiAdmin123!\",\"newPassword\":\"NovaSenha123!\"}"))
+            .andExpect(status().isOk());
+        assertTrue(encoder.matches("NovaSenha123!",users.findById(admin.getId()).orElseThrow().getPasswordHash()));
+    }
+
     @Test @WithMockUser(username="uiadmin",roles="ADMIN")
     void userLifecycleNeverExposesHashAndPreventsSelfDeactivation() throws Exception {
         String cadastro=mvc.perform(post("/api/professores").contentType(MediaType.APPLICATION_JSON)
@@ -68,7 +93,7 @@ class FrontendAccessTest {
         mvc.perform(put("/api/auth/utilizadores/{id}",adminId).contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {"username":"uiadmin","nome":"Administrador","password":"","role":"PROFESSOR"}
-                """)).andExpect(status().isConflict());
+                """)).andExpect(status().isForbidden());
     }
 
     @Test @WithMockUser(roles="SECRETARIA")
