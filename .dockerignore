@@ -1,0 +1,11 @@
+.git
+.github
+.idea
+.settings
+.vscode
+target
+data
+.env
+.env.*
+*.mv.db
+*.trace.db
